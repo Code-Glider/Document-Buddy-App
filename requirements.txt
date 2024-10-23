@@ -7,5 +7,23 @@ langchain-huggingface
 langchain-qdrant
 langchain-ollama
 unstructured[pdf]
-onnx==1.16.1
-qdrant-client
+python-magic
+python-magic-bin; sys_platform == 'win32'
+beautifulsoup4
+markdown
+pandas
+openpyxl
+python-frontmatter
+pdf2image
+pytesseract
+tabulate
+html2text
+chardet
+lxml
+extract-msg
+pillow
+tiktoken
+numpy
+python-docx
+python-pptx
+sentence-transformers
