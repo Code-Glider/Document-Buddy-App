@@ -71,26 +71,35 @@ elif choice == "🤖 Chatbot":
     col1, col2, col3 = st.columns(3)
 
     # Column 1: File Uploader and Preview
-    with col1:
-        st.header("📂 Upload Document")
-        uploaded_file = st.file_uploader("Upload a PDF", type=["pdf"])
-        if uploaded_file is not None:
-            st.success("📄 File Uploaded Successfully!")
-            # Display file name and size
-            st.markdown(f"**Filename:** {uploaded_file.name}")
-            st.markdown(f"**File Size:** {uploaded_file.size} bytes")
-            
-            # Display PDF preview using displayPDF function
+    # In new.py, update the file uploader section:
+
+# Column 1: File Uploader and Preview
+with col1:
+    st.header("📂 Upload Document")
+    uploaded_file = st.file_uploader("Upload a document", type=["pdf", "md", "ts", "tsx"])
+    if uploaded_file is not None:
+        st.success("📄 File Uploaded Successfully!")
+        # Display file name and size
+        st.markdown(f"**Filename:** {uploaded_file.name}")
+        st.markdown(f"**File Size:** {uploaded_file.size} bytes")
+        
+        # Display PDF preview only for PDF files
+        if uploaded_file.name.lower().endswith('.pdf'):
             st.markdown("### 📖 PDF Preview")
             displayPDF(uploaded_file)
-            
-            # Save the uploaded file to a temporary location
-            temp_pdf_path = "temp.pdf"
-            with open(temp_pdf_path, "wb") as f:
-                f.write(uploaded_file.getbuffer())
-            
-            # Store the temp_pdf_path in session_state
-            st.session_state['temp_pdf_path'] = temp_pdf_path
+        else:
+            # For non-PDF files, display the content as text
+            st.markdown("### 📝 File Content Preview")
+            content = uploaded_file.read().decode('utf-8')
+            st.code(content, language='typescript' if uploaded_file.name.endswith(('.ts', '.tsx')) else 'markdown')
+        
+        # Save the uploaded file to a temporary location
+        temp_file_path = f"temp{os.path.splitext(uploaded_file.name)[1]}"
+        with open(temp_file_path, "wb") as f:
+            f.write(uploaded_file.getbuffer())
+        
+        # Store the temp_file_path in session_state
+        st.session_state['temp_pdf_path'] = temp_file_path
 
     # Column 2: Create Embeddings
     with col2:
