@@ -103,9 +103,11 @@ streamlit run new.py
 
 ### qdrant installing through docker
 
-
-![image](https://github.com/user-attachments/assets/6e4cb7a2-c2f0-4a45-a1a9-d986b3139a95)
-
+```
+PS C:\Users\Laxmy\OneDrive\Desktop\YT Video\llama 3.2> docker run-p 6333:6333 ../qdrant/storage qdrant/qdrant
+PS C:\Users\Laxmy\OneDrive\Desktop\YT Video\llama 3.2> docker run -p 6333:6333 ../qdrant/storage qdrant/qdrant
+```
+#### These are Docker commands to run a Qdrant vector database container. The second line appears to be the correct syntax, as the first line has a typo (run-p vs run -p). The command maps port 6333 from the container to port 6333 on the host machine and sets up a storage volume.
 
 Note: If your main application file is named differently, replace new.py with your actual file name (e.g., app.py).
 
