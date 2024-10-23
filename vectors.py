@@ -2,10 +2,16 @@
 
 import os
 import base64
-from langchain_community.document_loaders import UnstructuredPDFLoader
+from typing import List, Union
+from langchain_community.document_loaders import (
+    UnstructuredPDFLoader,
+    UnstructuredMarkdownLoader,
+    TextLoader
+)
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_community.embeddings import HuggingFaceBgeEmbeddings
 from langchain_community.vectorstores import Qdrant
+from langchain.docstore.document import Document
 
 class EmbeddingsManager:
     def __init__(
@@ -38,27 +44,50 @@ class EmbeddingsManager:
             encode_kwargs=self.encode_kwargs,
         )
 
-    def create_embeddings(self, pdf_path: str):
+    def _get_loader(self, file_path: str):
         """
-        Processes the PDF, creates embeddings, and stores them in Qdrant.
+        Returns appropriate loader based on file extension.
 
         Args:
-            pdf_path (str): The file path to the PDF document.
+            file_path (str): Path to the file.
+
+        Returns:
+            loader: Document loader instance
+        """
+        file_extension = os.path.splitext(file_path)[1].lower()
+        
+        if file_extension == '.pdf':
+            return UnstructuredPDFLoader(file_path)
+        elif file_extension == '.md':
+            return UnstructuredMarkdownLoader(file_path)
+        elif file_extension in ['.ts', '.tsx']:
+            return TextLoader(file_path)
+        else:
+            raise ValueError(f"Unsupported file type: {file_extension}")
+
+    def create_embeddings(self, file_path: str):
+        """
+        Processes the document, creates embeddings, and stores them in Qdrant.
+
+        Args:
+            file_path (str): The file path to the document.
 
         Returns:
             str: Success message upon completion.
         """
-        if not os.path.exists(pdf_path):
-            raise FileNotFoundError(f"The file {pdf_path} does not exist.")
+        if not os.path.exists(file_path):
+            raise FileNotFoundError(f"The file {file_path} does not exist.")
 
         # Load and preprocess the document
-        loader = UnstructuredPDFLoader(pdf_path)
+        loader = self._get_loader(file_path)
         docs = loader.load()
         if not docs:
-            raise ValueError("No documents were loaded from the PDF.")
+            raise ValueError("No documents were loaded from the file.")
 
         text_splitter = RecursiveCharacterTextSplitter(
-            chunk_size=1000, chunk_overlap=250
+            chunk_size=1000, 
+            chunk_overlap=250,
+            separators=["\n\n", "\n", " ", ""]  # Added more separators for code files
         )
         splits = text_splitter.split_documents(docs)
         if not splits:
@@ -77,4 +106,3 @@ class EmbeddingsManager:
             raise ConnectionError(f"Failed to connect to Qdrant: {e}")
 
         return "✅ Vector DB Successfully Created and Stored in Qdrant!"
-
