@@ -1,3 +1,10 @@
+# tutorial link : https://www.youtube.com/watch?v=7hnZ6SFnXXA
+
+### tutorial description : 
+I've created a tutorial video showcasing a real-time Retrieval Augmented Generation (RAG) app built using Qdrant, LLaMA 3.2, BGE embeddings, and unstructured. This app efficiently retrieves and generates contextual information by combining powerful vector search with LLaMA's capabilities, making it ideal for applications like document search and question-answering systems. The complete code is available on GitHub for you to explore.
+
+
+
 # 📄 Document Buddy App
 
 ![Document Buddy App](sct.png)
