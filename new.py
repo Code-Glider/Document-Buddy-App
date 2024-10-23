@@ -83,7 +83,7 @@ with col1:
         st.markdown(f"**Filename:** {uploaded_file.name}")
         st.markdown(f"**File Size:** {uploaded_file.size} bytes")
         
-        # And update the preview section:
+# And update the preview section:
 if uploaded_file is not None:
     st.success("📄 File Uploaded Successfully!")
     st.markdown(f"**Filename:** {uploaded_file.name}")
@@ -119,12 +119,25 @@ if uploaded_file is not None:
             st.code(content, language='css')
         except Exception as e:
             st.error(f"Error reading stylesheet: {e}")
+    elif file_extension == '.py':
+        st.markdown("### 🐍 Python Code Preview")
+        try:
+            content = uploaded_file.read().decode('utf-8')
+            st.code(content, language='python')
+        except Exception as e:
+            st.error(f"Error reading Python file: {e}")
+    elif file_extension in ['.js', '.jsx']:
+        st.markdown("### 📜 JavaScript/JSX Preview")
+        try:
+            content = uploaded_file.read().decode('utf-8')
+            st.code(content, language='javascript')
+        except Exception as e:
+            st.error(f"Error reading JavaScript file: {e}")
     else:
         st.markdown("### 📝 File Content Preview")
         content = uploaded_file.read().decode('utf-8')
         language = 'typescript' if file_extension in ['.ts', '.tsx'] else 'markdown'
-        st.code(content, language=language)
-        
+        st.code(content, language=language)        
         # Save the uploaded file to a temporary location
         temp_file_path = f"temp{os.path.splitext(uploaded_file.name)[1]}"
         with open(temp_file_path, "wb") as f:
