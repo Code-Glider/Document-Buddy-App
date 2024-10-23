@@ -101,6 +101,12 @@ Start the Streamlit app using the following command:
 
 streamlit run new.py
 
+### qdrant installing through docker
+
+
+![image](https://github.com/user-attachments/assets/6e4cb7a2-c2f0-4a45-a1a9-d986b3139a95)
+
+
 Note: If your main application file is named differently, replace new.py with your actual file name (e.g., app.py).
 
 This command will launch the app in your default web browser. If it doesn’t open automatically, navigate to the URL provided in the terminal (usually http://localhost:8501).
