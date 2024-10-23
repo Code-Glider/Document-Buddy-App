@@ -76,7 +76,7 @@ elif choice == "🤖 Chatbot":
 # Column 1: File Uploader and Preview
 with col1:
     st.header("📂 Upload Document")
-    uploaded_file = st.file_uploader("Upload a document", type=["pdf", "md", "ts", "tsx"])
+    uploaded_file = st.file_uploader("Upload a document", type=["pdf", "md", "ts", "tsx", "js", "json","jsx", "py", "html", "css", "scss", "yml, "yaml", "toml", "txt", "xml", ""])
     if uploaded_file is not None:
         st.success("📄 File Uploaded Successfully!")
         # Display file name and size
