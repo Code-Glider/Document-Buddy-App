@@ -1,27 +1,7 @@
-# vectors.py
-
 import os
-import base64
-import json
-import pandas as pd
-import xml.etree.ElementTree as ET
-from typing import List, Union, Dict
-from langchain_community.document_loaders import (
-    UnstructuredPDFLoader,
-    UnstructuredMarkdownLoader,
-    TextLoader,
-    CSVLoader,
-    JSONLoader,
-    UnstructuredXMLLoader,
-    BSHTMLLoader,
-    PythonLoader,  # Added Python Loader
-)
-from langchain_text_splitters import (
-    RecursiveCharacterTextSplitter,
-    Language,
-    HTMLHeaderTextSplitter,
-    PythonCodeTextSplitter,  # Added for Python code splitting
-)
+from typing import List, Dict
+from langchain_community.document_loaders import UnstructuredFileLoader
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_community.embeddings import HuggingFaceBgeEmbeddings
 from langchain_community.vectorstores import Qdrant
 from langchain.docstore.document import Document
@@ -37,6 +17,13 @@ class EmbeddingsManager:
     ):
         """
         Initializes the EmbeddingsManager with the specified model and Qdrant settings.
+
+        Args:
+            model_name (str): The HuggingFace model name for embeddings.
+            device (str): The device to run the model on ('cpu' or 'cuda').
+            encode_kwargs (dict): Additional keyword arguments for encoding.
+            qdrant_url (str): The URL for the Qdrant instance.
+            collection_name (str): The name of the Qdrant collection.
         """
         self.model_name = model_name
         self.device = device
@@ -50,155 +37,105 @@ class EmbeddingsManager:
             encode_kwargs=self.encode_kwargs,
         )
 
-    def _json_extract_func(self, data: Dict) -> str:
-        """
-        Extracts text content from JSON data.
-        """
-        text_items = []
-        for key, value in data.items():
-            if isinstance(value, (str, int, float, bool)):
-                text_items.append(f"{key}: {value}")
-            elif isinstance(value, (dict, list)):
-                text_items.append(f"{key}: {json.dumps(value, indent=2)}")
-        return "\n".join(text_items)
-
     def _get_loader(self, file_path: str):
         """
-        Returns appropriate loader based on file extension.
-        """
-        file_extension = os.path.splitext(file_path)[1].lower()
-        
-        if file_extension == '.pdf':
-            return UnstructuredPDFLoader(file_path)
-        elif file_extension == '.md':
-            return UnstructuredMarkdownLoader(file_path)
-        elif file_extension in ['.ts', '.tsx']:
-            return TextLoader(file_path)
-        elif file_extension == '.csv':
-            return CSVLoader(
-                file_path,
-                source_column="source" if "source" in self._get_csv_columns(file_path) else None,
-                encoding="utf-8"
-            )
-        elif file_extension == '.json':
-            return JSONLoader(
-                file_path=file_path,
-                jq_schema=".",
-                text_content=False,
-                json_lines=False,
-                extract_func=self._json_extract_func
-            )
-        elif file_extension == '.xml':
-            return UnstructuredXMLLoader(file_path)
-        elif file_extension == '.html':
-            return BSHTMLLoader(file_path)
-        elif file_extension in ['.css', '.scss']:
-            return TextLoader(file_path)
-        elif file_extension == '.py':
-            return PythonLoader(file_path)
-        elif file_extension in ['.js', '.jsx']:
-            return TextLoader(file_path)
-        else:
-            raise ValueError(f"Unsupported file type: {file_extension}")
+        Returns UnstructuredFileLoader that handles all file types.
 
-    def _get_language_specific_splitter(self, file_extension: str) -> RecursiveCharacterTextSplitter:
-        """
-        Returns a language-specific text splitter.
-        """
-        language_map = {
-            '.py': Language.PYTHON,
-            '.js': Language.JS,
-            '.jsx': Language.JSX,
-            '.css': Language.CSS,
-            '.scss': Language.CSS,
-            '.html': Language.HTML,
-            '.xml': Language.XML,
-            '.json': Language.JSON,
-            '.ts': Language.TYPESCRIPT,
-            '.tsx': Language.TSX,
-        }
+        Args:
+            file_path (str): Path to the file.
 
-        if file_extension in language_map:
-            return RecursiveCharacterTextSplitter.from_language(
-                language=language_map[file_extension],
-                chunk_size=self._get_chunk_settings(file_extension)['chunk_size'],
-                chunk_overlap=self._get_chunk_settings(file_extension)['chunk_overlap'],
-            )
-        
-        return None
-
-    def _get_html_splitter(self) -> HTMLHeaderTextSplitter:
+        Returns:
+            UnstructuredFileLoader: Document loader instance
         """
-        Returns a text splitter configured for HTML files.
-        """
-        headers_to_split_on = [
-            ("h1", "Header 1"),
-            ("h2", "Header 2"),
-            ("h3", "Header 3"),
-            ("h4", "Header 4"),
-        ]
-        return HTMLHeaderTextSplitter(headers_to_split_on=headers_to_split_on)
+        return UnstructuredFileLoader(
+            file_path,
+            mode="elements",
+            strategy="fast"
+        )
 
-    def _get_chunk_settings(self, file_extension: str) -> Dict[str, int]:
+    def _get_chunk_settings(self, file_path: str) -> Dict[str, int]:
         """
         Returns appropriate chunk settings based on file type.
-        """
-        settings = {
-            '.csv': {'chunk_size': 500, 'chunk_overlap': 50},
-            '.json': {'chunk_size': 800, 'chunk_overlap': 100},
-            '.xml': {'chunk_size': 800, 'chunk_overlap': 100},
-            '.html': {'chunk_size': 1000, 'chunk_overlap': 200},
-            '.css': {'chunk_size': 800, 'chunk_overlap': 100},
-            '.scss': {'chunk_size': 800, 'chunk_overlap': 100},
-            '.py': {'chunk_size': 1000, 'chunk_overlap': 200},
-            '.js': {'chunk_size': 800, 'chunk_overlap': 150},
-            '.jsx': {'chunk_size': 800, 'chunk_overlap': 150},
-            'default': {'chunk_size': 1000, 'chunk_overlap': 250}
-        }
-        return settings.get(file_extension, settings['default'])
 
-    def _get_text_splitter(self, file_path: str):
-        """
-        Returns appropriate text splitter based on file type.
+        Args:
+            file_path (str): Path to the file.
+
+        Returns:
+            Dict[str, int]: Dictionary containing chunk size and overlap settings
         """
         file_extension = os.path.splitext(file_path)[1].lower()
         
-        # Try to get language-specific splitter first
-        splitter = self._get_language_specific_splitter(file_extension)
-        if splitter:
-            return splitter
-
-        # Fall back to HTML splitter or default splitter
-        if file_extension == '.html':
-            return self._get_html_splitter()
+        settings = {
+            # Text files and documentation
+            '.txt': {'chunk_size': 1000, 'chunk_overlap': 200},
+            '.md': {'chunk_size': 1000, 'chunk_overlap': 200},
+            '.pdf': {'chunk_size': 1000, 'chunk_overlap': 200},
+            '.doc': {'chunk_size': 1000, 'chunk_overlap': 200},
+            '.docx': {'chunk_size': 1000, 'chunk_overlap': 200},
+            
+            # Code files
+            '.py': {'chunk_size': 800, 'chunk_overlap': 150},
+            '.js': {'chunk_size': 800, 'chunk_overlap': 150},
+            '.jsx': {'chunk_size': 800, 'chunk_overlap': 150},
+            '.ts': {'chunk_size': 800, 'chunk_overlap': 150},
+            '.tsx': {'chunk_size': 800, 'chunk_overlap': 150},
+            '.css': {'chunk_size': 600, 'chunk_overlap': 100},
+            '.scss': {'chunk_size': 600, 'chunk_overlap': 100},
+            '.html': {'chunk_size': 800, 'chunk_overlap': 150},
+            
+            # Data files
+            '.json': {'chunk_size': 500, 'chunk_overlap': 100},
+            '.xml': {'chunk_size': 500, 'chunk_overlap': 100},
+            '.csv': {'chunk_size': 500, 'chunk_overlap': 50},
+            
+            # Default settings
+            'default': {'chunk_size': 1000, 'chunk_overlap': 200}
+        }
         
-        # Default splitter
-        chunk_settings = self._get_chunk_settings(file_extension)
-        return RecursiveCharacterTextSplitter(
+        return settings.get(file_extension, settings['default'])
+
+    def create_embeddings(self, file_path: str):
+        """
+        Processes the document, creates embeddings, and stores them in Qdrant.
+
+        Args:
+            file_path (str): The file path to the document.
+
+        Returns:
+            str: Success message upon completion.
+
+        Raises:
+            FileNotFoundError: If the file does not exist.
+            ValueError: If no documents are loaded or no chunks are created.
+            ConnectionError: If connection to Qdrant fails.
+        """
+        if not os.path.exists(file_path):
+            raise FileNotFoundError(f"The file {file_path} does not exist.")
+
+        # Load document
+        try:
+            loader = self._get_loader(file_path)
+            docs = loader.load()
+            if not docs:
+                raise ValueError("No documents were loaded from the file.")
+        except Exception as e:
+            raise ValueError(f"Error loading document: {str(e)}")
+
+        # Get chunk settings and create text splitter
+        chunk_settings = self._get_chunk_settings(file_path)
+        text_splitter = RecursiveCharacterTextSplitter(
             chunk_size=chunk_settings['chunk_size'],
             chunk_overlap=chunk_settings['chunk_overlap'],
             separators=["\n\n", "\n", " ", ""]
         )
 
-    def create_embeddings(self, file_path: str):
-        """
-        Processes the document, creates embeddings, and stores them in Qdrant.
-        """
-        if not os.path.exists(file_path):
-            raise FileNotFoundError(f"The file {file_path} does not exist.")
-
-        # Load and preprocess the document
-        loader = self._get_loader(file_path)
-        docs = loader.load()
-        if not docs:
-            raise ValueError("No documents were loaded from the file.")
-
-        # Get appropriate text splitter
-        text_splitter = self._get_text_splitter(file_path)
-        splits = text_splitter.split_documents(docs)
-        
-        if not splits:
-            raise ValueError("No text chunks were created from the documents.")
+        # Split documents
+        try:
+            splits = text_splitter.split_documents(docs)
+            if not splits:
+                raise ValueError("No text chunks were created from the documents.")
+        except Exception as e:
+            raise ValueError(f"Error splitting document: {str(e)}")
 
         # Create and store embeddings in Qdrant
         try:
@@ -210,6 +147,6 @@ class EmbeddingsManager:
                 collection_name=self.collection_name,
             )
         except Exception as e:
-            raise ConnectionError(f"Failed to connect to Qdrant: {e}")
+            raise ConnectionError(f"Failed to connect to Qdrant: {str(e)}")
 
         return "✅ Vector DB Successfully Created and Stored in Qdrant!"
