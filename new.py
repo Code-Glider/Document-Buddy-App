@@ -83,15 +83,47 @@ with col1:
         st.markdown(f"**Filename:** {uploaded_file.name}")
         st.markdown(f"**File Size:** {uploaded_file.size} bytes")
         
-        # Display PDF preview only for PDF files
-        if uploaded_file.name.lower().endswith('.pdf'):
-            st.markdown("### 📖 PDF Preview")
-            displayPDF(uploaded_file)
-        else:
-            # For non-PDF files, display the content as text
-            st.markdown("### 📝 File Content Preview")
+        # And update the preview section:
+if uploaded_file is not None:
+    st.success("📄 File Uploaded Successfully!")
+    st.markdown(f"**Filename:** {uploaded_file.name}")
+    st.markdown(f"**File Size:** {uploaded_file.size} bytes")
+    
+    file_extension = os.path.splitext(uploaded_file.name)[1].lower()
+    
+    if file_extension == '.pdf':
+        st.markdown("### 📖 PDF Preview")
+        displayPDF(uploaded_file)
+    elif file_extension == '.csv':
+        st.markdown("### 📊 CSV Preview")
+        df = pd.read_csv(uploaded_file)
+        st.dataframe(df.head())
+    elif file_extension == '.json':
+        st.markdown("### 📊 JSON Preview")
+        try:
+            json_data = json.load(uploaded_file)
+            st.json(json_data)
+        except json.JSONDecodeError:
+            st.error("Invalid JSON file")
+    elif file_extension in ['.html', '.xml']:
+        st.markdown(f"### 📄 {file_extension.upper()[1:]} Preview")
+        try:
             content = uploaded_file.read().decode('utf-8')
-            st.code(content, language='typescript' if uploaded_file.name.endswith(('.ts', '.tsx')) else 'markdown')
+            st.code(content, language=file_extension[1:])
+        except Exception as e:
+            st.error(f"Error reading file: {e}")
+    elif file_extension in ['.css', '.scss']:
+        st.markdown("### 🎨 Stylesheet Preview")
+        try:
+            content = uploaded_file.read().decode('utf-8')
+            st.code(content, language='css')
+        except Exception as e:
+            st.error(f"Error reading stylesheet: {e}")
+    else:
+        st.markdown("### 📝 File Content Preview")
+        content = uploaded_file.read().decode('utf-8')
+        language = 'typescript' if file_extension in ['.ts', '.tsx'] else 'markdown'
+        st.code(content, language=language)
         
         # Save the uploaded file to a temporary location
         temp_file_path = f"temp{os.path.splitext(uploaded_file.name)[1]}"
