@@ -13,12 +13,14 @@ from langchain_community.document_loaders import (
     CSVLoader,
     JSONLoader,
     UnstructuredXMLLoader,
-    BSHTMLLoader,  # Added HTML Loader
+    BSHTMLLoader,
+    PythonLoader,  # Added Python Loader
 )
 from langchain_text_splitters import (
     RecursiveCharacterTextSplitter,
-    Language,  # Added for code-specific splitting
-    HTMLHeaderTextSplitter  # Added for HTML header-based splitting
+    Language,
+    HTMLHeaderTextSplitter,
+    PythonCodeTextSplitter,  # Added for Python code splitting
 )
 from langchain_community.embeddings import HuggingFaceBgeEmbeddings
 from langchain_community.vectorstores import Qdrant
@@ -92,20 +94,40 @@ class EmbeddingsManager:
             return BSHTMLLoader(file_path)
         elif file_extension in ['.css', '.scss']:
             return TextLoader(file_path)
+        elif file_extension == '.py':
+            return PythonLoader(file_path)
+        elif file_extension in ['.js', '.jsx']:
+            return TextLoader(file_path)
         else:
             raise ValueError(f"Unsupported file type: {file_extension}")
 
-    def _get_css_splitter(self) -> RecursiveCharacterTextSplitter:
+    def _get_language_specific_splitter(self, file_extension: str) -> RecursiveCharacterTextSplitter:
         """
-        Returns a text splitter configured for CSS/SCSS files.
+        Returns a language-specific text splitter.
         """
-        return RecursiveCharacterTextSplitter.from_language(
-            language=Language.CSS,
-            chunk_size=800,
-            chunk_overlap=100,
-        )
+        language_map = {
+            '.py': Language.PYTHON,
+            '.js': Language.JS,
+            '.jsx': Language.JSX,
+            '.css': Language.CSS,
+            '.scss': Language.CSS,
+            '.html': Language.HTML,
+            '.xml': Language.XML,
+            '.json': Language.JSON,
+            '.ts': Language.TYPESCRIPT,
+            '.tsx': Language.TSX,
+        }
 
-    def _get_html_splitter(self) -> RecursiveCharacterTextSplitter:
+        if file_extension in language_map:
+            return RecursiveCharacterTextSplitter.from_language(
+                language=language_map[file_extension],
+                chunk_size=self._get_chunk_settings(file_extension)['chunk_size'],
+                chunk_overlap=self._get_chunk_settings(file_extension)['chunk_overlap'],
+            )
+        
+        return None
+
+    def _get_html_splitter(self) -> HTMLHeaderTextSplitter:
         """
         Returns a text splitter configured for HTML files.
         """
@@ -117,11 +139,10 @@ class EmbeddingsManager:
         ]
         return HTMLHeaderTextSplitter(headers_to_split_on=headers_to_split_on)
 
-    def _get_chunk_settings(self, file_path: str) -> Dict[str, int]:
+    def _get_chunk_settings(self, file_extension: str) -> Dict[str, int]:
         """
         Returns appropriate chunk settings based on file type.
         """
-        file_extension = os.path.splitext(file_path)[1].lower()
         settings = {
             '.csv': {'chunk_size': 500, 'chunk_overlap': 50},
             '.json': {'chunk_size': 800, 'chunk_overlap': 100},
@@ -129,6 +150,9 @@ class EmbeddingsManager:
             '.html': {'chunk_size': 1000, 'chunk_overlap': 200},
             '.css': {'chunk_size': 800, 'chunk_overlap': 100},
             '.scss': {'chunk_size': 800, 'chunk_overlap': 100},
+            '.py': {'chunk_size': 1000, 'chunk_overlap': 200},
+            '.js': {'chunk_size': 800, 'chunk_overlap': 150},
+            '.jsx': {'chunk_size': 800, 'chunk_overlap': 150},
             'default': {'chunk_size': 1000, 'chunk_overlap': 250}
         }
         return settings.get(file_extension, settings['default'])
@@ -139,17 +163,22 @@ class EmbeddingsManager:
         """
         file_extension = os.path.splitext(file_path)[1].lower()
         
-        if file_extension in ['.css', '.scss']:
-            return self._get_css_splitter()
-        elif file_extension == '.html':
+        # Try to get language-specific splitter first
+        splitter = self._get_language_specific_splitter(file_extension)
+        if splitter:
+            return splitter
+
+        # Fall back to HTML splitter or default splitter
+        if file_extension == '.html':
             return self._get_html_splitter()
-        else:
-            chunk_settings = self._get_chunk_settings(file_path)
-            return RecursiveCharacterTextSplitter(
-                chunk_size=chunk_settings['chunk_size'],
-                chunk_overlap=chunk_settings['chunk_overlap'],
-                separators=["\n\n", "\n", " ", ""]
-            )
+        
+        # Default splitter
+        chunk_settings = self._get_chunk_settings(file_extension)
+        return RecursiveCharacterTextSplitter(
+            chunk_size=chunk_settings['chunk_size'],
+            chunk_overlap=chunk_settings['chunk_overlap'],
+            separators=["\n\n", "\n", " ", ""]
+        )
 
     def create_embeddings(self, file_path: str):
         """
