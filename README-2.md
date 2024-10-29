@@ -1,3 +1,46 @@
+tutorial link : https://www.youtube.com/watch?v=7hnZ6SFnXXA
+tutorial description :
+I've created a tutorial video showcasing a real-time Retrieval Augmented Generation (RAG) app built using Qdrant, LLaMA 3.2, BGE embeddings, and unstructured. This app efficiently retrieves and generates contextual information by combining powerful vector search with LLaMA's capabilities, making it ideal for applications like document search and question-answering systems. The complete code is available on GitHub for you to explore.
+
+📄 Document Buddy App
+Document Buddy App
+
+Document Buddy App is a powerful Streamlit-based application designed to simplify document management. Upload your PDF documents, create embeddings for efficient retrieval, and interact with your documents through an intelligent chatbot interface. 🚀
+
+🛠️ Features
+📂 Upload Documents: Easily upload and preview your PDF documents within the app.
+🧠 Create Embeddings: Generate embeddings for your documents to enable efficient search and retrieval.
+🤖 Chatbot Interface: Interact with your documents using a smart chatbot that leverages the created embeddings.
+📧 Contact: Get in touch with the developer or contribute to the project on GitHub.
+🌟 User-Friendly Interface: Enjoy a sleek and intuitive UI with emojis and responsive design for enhanced user experience.
+🖥️ Tech Stack
+The Document Buddy App leverages a combination of cutting-edge technologies to deliver a seamless and efficient user experience. Here's a breakdown of the technologies and tools used:
+
+LangChain: Utilized as the orchestration framework to manage the flow between different components, including embeddings creation, vector storage, and chatbot interactions.
+
+Unstructured: Employed for robust PDF processing, enabling the extraction and preprocessing of text from uploaded PDF documents.
+
+BGE Embeddings from HuggingFace: Used to generate high-quality embeddings for the processed documents, facilitating effective semantic search and retrieval.
+
+Qdrant: A vector database running locally via Docker, responsible for storing and managing the generated embeddings for fast and scalable retrieval.
+
+LLaMA 3.2 via Ollama: Integrated as the local language model to power the chatbot, providing intelligent and context-aware responses based on the document embeddings.
+
+Streamlit: The core framework for building the interactive web application, offering an intuitive interface for users to upload documents, create embeddings, and interact with the chatbot.
+
+📁 Directory Structure
+document_buddy_app/
+
+│── logo.png
+├── new.py
+├── vectors.py
+├── chatbot.py
+├── requirements.txt
+
+
+
+
+
 # Document Buddy App Complete Setup Guide
 
 ## Prerequisites Installation
