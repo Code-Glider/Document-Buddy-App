@@ -44,6 +44,7 @@ document_buddy_app/
 # Document Buddy App Complete Setup Guide
 
 ## Prerequisites Installation
+
 1. **Install Required Software**
 ```powershell
 # Download and install these in order:
@@ -63,6 +64,9 @@ Variable value: C:\Program Files\nodejs
 # Add to Path
 C:\Program Files\nodejs
 C:\Program Files\nodejs\node_modules
+
+# Disable Hugging Face symlink warning
+[Environment]::SetEnvironmentVariable('HF_HUB_DISABLE_SYMLINKS_WARNING', 'true', 'User')
 ```
 
 2. **Clone Repository**
@@ -114,8 +118,8 @@ pip install -r requirements.txt
 ollama serve
 
 # Install required models
-ollama run minicpm-v
-ollama pull bge-m3
+ollama pull minicpm-vlatest
+ollama pull bge-small-en
 ```
 
 3. **Configure Application Settings**
@@ -130,7 +134,6 @@ ollama pull bge-m3
 
 1. **Run Application**
 ```powershell
-# Start application
 cd I:\projects\Document-Buddy-App
 streamlit run new.py
 ```
@@ -181,3 +184,7 @@ Remember to save all settings and restart services if needed.
 Citations:
 [1] https://pplx-res.cloudinary.com/image/upload/v1729963489/user_uploads/lrfrxehap/image.jpg
 [2] https://pplx-res.cloudinary.com/image/upload/v1729967352/user_uploads/qsbptbliw/image.jpg
+[3] https://nodejs.org/en
+[4] https://desktop.github.com
+Remember to save all settings and restart services if needed.
+
