@@ -114,8 +114,8 @@ pip install -r requirements.txt
 ollama serve
 
 # Install required models
-ollama pull minicpm-vlatest
-ollama pull bge-small-en
+ollama run minicpm-v
+ollama pull bge-m3
 ```
 
 3. **Configure Application Settings**
